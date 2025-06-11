@@ -1,0 +1,50 @@
+version: '3'
+
+volumes:
+  postgres_data:
+      driver: local
+
+services:
+  postgresK:
+      image: postgres
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      ports:
+        - 5435:5432
+      environment:
+        POSTGRES_DB: keycloak
+        POSTGRES_USER: keycloak
+        POSTGRES_PASSWORD: password
+      networks:
+        - network
+  keycloak:
+      image: quay.io/keycloak/keycloak:18.0
+      environment:
+        KC_DB: postgres
+        KC_DB_URL: jdbc:postgresql://postgresK:5432/keycloak
+        KC_DB_DATABASE: keycloak
+        KC_DB_USERNAME: keycloak
+        KC_DB_SCHEMA: public
+        KC_DB_PASSWORD: password
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: password
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: password
+        KC_HOSTNAME_STRICT: "false"
+        KC_EDGE: proxy
+        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
+        #JDBC_PARAMS: "ssl=true"
+      networks:
+        - network
+      ports:
+        - 8280:8080
+      depends_on:
+        - postgresK
+      command:
+        - start-dev
+        - --import-realm
+      volumes:
+        - ./export1/Default-realm.json:/opt/keycloak/data/import/realm.json
+networks:
+  network:
+    driver: bridge
